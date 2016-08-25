@@ -6,6 +6,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,11 +22,61 @@ public class MovieQuoteAdapter extends RecyclerView.Adapter<MovieQuoteAdapter.Vi
 
     private List<MovieQuote> mMovieQuotes;
     private Callback mCallback;
-
+    private DatabaseReference mMovieQuotesRef;
 
     public MovieQuoteAdapter(Callback callback) {
         mCallback = callback;
         mMovieQuotes = new ArrayList<>();
+        mMovieQuotesRef = FirebaseDatabase.getInstance().getReference().child("quotes");
+        mMovieQuotesRef.addChildEventListener(new QuotesChildEventListener());
+    }
+
+    class QuotesChildEventListener implements ChildEventListener {
+
+        @Override
+        public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+            MovieQuote quote = dataSnapshot.getValue(MovieQuote.class);
+            quote.setKey(dataSnapshot.getKey());
+            mMovieQuotes.add(0, quote);
+            notifyDataSetChanged();
+        }
+
+        @Override
+        public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+            String key = dataSnapshot.getKey();
+            MovieQuote updateMovieQuote = dataSnapshot.getValue(MovieQuote.class);
+            for (MovieQuote mq : mMovieQuotes) {
+                if (mq.getKey().equals(key)) {
+                    mq.setMovie(updateMovieQuote.getMovie());
+                    mq.setQuote(updateMovieQuote.getQuote());
+                    notifyDataSetChanged();
+                    return;
+                }
+            }
+
+        }
+
+        @Override
+        public void onChildRemoved(DataSnapshot dataSnapshot) {
+            String key = dataSnapshot.getKey();
+            for (MovieQuote mq : mMovieQuotes) {
+                if (mq.getKey().equals(key)) {
+                    mMovieQuotes.remove(mq);
+                    notifyDataSetChanged();
+                    return;
+                }
+            }
+        }
+
+        @Override
+        public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+        }
+
+        @Override
+        public void onCancelled(DatabaseError databaseError) {
+
+        }
     }
 
     @Override
@@ -51,9 +107,7 @@ public class MovieQuoteAdapter extends RecyclerView.Adapter<MovieQuoteAdapter.Vi
     }
 
     public void remove(MovieQuote movieQuote) {
-        //TODO: Remove the next line(s) and use Firebase instead
-        mMovieQuotes.remove(movieQuote);
-        notifyDataSetChanged();
+        mMovieQuotesRef.child(movieQuote.getKey()).removeValue();
     }
 
 
@@ -63,16 +117,13 @@ public class MovieQuoteAdapter extends RecyclerView.Adapter<MovieQuoteAdapter.Vi
     }
 
     public void add(MovieQuote movieQuote) {
-        //TODO: Remove the next line(s) and use Firebase instead
-        mMovieQuotes.add(0, movieQuote);
-        notifyDataSetChanged();
+        mMovieQuotesRef.push().setValue(movieQuote);
     }
 
     public void update(MovieQuote movieQuote, String newQuote, String newMovie) {
-        //TODO: Remove the next line(s) and use Firebase instead
         movieQuote.setQuote(newQuote);
         movieQuote.setMovie(newMovie);
-        notifyDataSetChanged();
+        mMovieQuotesRef.child(movieQuote.getKey()).setValue(movieQuote);
     }
 
     public interface Callback {
@@ -89,6 +140,4 @@ public class MovieQuoteAdapter extends RecyclerView.Adapter<MovieQuoteAdapter.Vi
             mMovieTextView = (TextView) itemView.findViewById(R.id.movie_text);
         }
     }
-
-
 }

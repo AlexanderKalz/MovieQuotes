@@ -19,7 +19,6 @@ import android.widget.EditText;
 
 public class MainActivity extends AppCompatActivity implements MovieQuoteAdapter.Callback {
 
-
     private edu.rosehulman.moviequotes.MovieQuoteAdapter mAdapter;
 
     @Override
@@ -123,9 +122,9 @@ public class MainActivity extends AppCompatActivity implements MovieQuoteAdapter
         df.show(getSupportFragmentManager(), "add");
     }
 
-
     @Override
     public void onEdit(final MovieQuote movieQuote) {
         showAddEditDialog(movieQuote);
     }
+
 }
